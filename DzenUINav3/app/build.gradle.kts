@@ -74,7 +74,6 @@ dependencies {
 
     // If using indicators, also depend on
     implementation(libs.accompanist.pager.indicators)
-
     implementation(libs.coil.compose)
 
     // SplashScreen

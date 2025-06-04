@@ -5,6 +5,7 @@
 
 package com.example.dzen.ui.theme.screen.onboarding_screen
 
+import android.content.res.Configuration
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -20,8 +21,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -37,6 +38,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -67,6 +69,29 @@ fun OnboardScreen(
 ) {
 
     val viewModel: OnboardViewModel = viewModel()
+
+    val configuration = LocalConfiguration.current
+    val orientation = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+
+    if (orientation)
+        VerticalOnboardScreen(
+            modifier = modifier,
+            viewModel = viewModel,
+            navBackStack = navBackStack
+        )
+    else HorizontalOnboardScreen(
+        modifier = modifier,
+        viewModel = viewModel,
+        navBackStack = navBackStack
+    )
+}
+
+@Composable
+fun VerticalOnboardScreen(
+    modifier: Modifier = Modifier,
+    viewModel: OnboardViewModel,
+    navBackStack: NavBackStack = NavBackStack()
+) {
     val state by viewModel.state.collectAsState()
 
     val pagerState = rememberPagerState()
@@ -76,39 +101,22 @@ fun OnboardScreen(
 
     with(state) {
         Column(
-            modifier = modifier.padding(vertical = 30.dp),
-            verticalArrangement = Arrangement.Center,
+            modifier = modifier.padding(horizontal = 10.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            HorizontalPager(
-                count = onBoardList.size,
-                itemSpacing = 5.dp,
-                state = pagerState,
-                contentPadding = PaddingValues(),
-            ) { page ->
-                val onBoard = onBoardList[page]
-                Box(
-                    modifier = Modifier
-                        .size(288.dp, 336.dp)
-                        .clip(RoundedCornerShape(16.dp)),
-                    content = {
-                        Image(
-                            painter = painterResource(onBoard.img),
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .scale(.8f + (.2f * transition))
-                                .graphicsLayer { rotationX = (1f - transition) * 5f }
-                                .alpha(min(1f, transition / .2f)),
-                            contentDescription = null,
-                            contentScale = ContentScale.FillBounds
-                        )
-                    }
-                )
-            }
+            HorizontalPagerUi(
+                modifier = Modifier.weight(1f),
+                count = onBoardList,
+                pagerState = pagerState,
+                transition = transition
+            )
 
-            Spacer(modifier = Modifier.padding(vertical = 30.dp))
+            Spacer(modifier = Modifier.padding(vertical = 10.dp))
 
             CustomPagerIndicator(pagerState = pagerState)
+
+            Spacer(modifier = Modifier.padding(vertical = 10.dp))
 
             Text(
                 text = "First to know",
@@ -127,25 +135,118 @@ fun OnboardScreen(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.padding(vertical = 20.dp))
+            Spacer(modifier = Modifier.padding(vertical = 10.dp))
 
-            Button(
+            OnBoardButton(
                 modifier = Modifier
-                    .padding(horizontal = 20.dp)
                     .fillMaxWidth()
                     .height(56.dp),
-                onClick = { navBackStack.add(HomeBottomBarNav.HomeScreen) },
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(Color(0xFF475ad7))
+                onClick = { navBackStack.add(HomeBottomBarNav.HomeScreen) }
+            )
+        }
+    }
+}
+
+@Composable
+fun HorizontalOnboardScreen(
+    modifier: Modifier = Modifier,
+    viewModel: OnboardViewModel,
+    navBackStack: NavBackStack = NavBackStack()
+) {
+    val state by viewModel.state.collectAsState()
+
+    val pagerState = rememberPagerState()
+    val transition by animateFloatAsState(
+        targetValue = if (true) 1f else 0f, label = ""
+    )
+
+    with(state) {
+        Row(
+            modifier = modifier.padding(30.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Column(
+                modifier = Modifier.width(250.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                HorizontalPagerUi(
+                    modifier = Modifier.weight(1f),
+                    count = onBoardList,
+                    pagerState = pagerState,
+                    transition = transition
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+                CustomPagerIndicator(pagerState = pagerState)
+            }
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Next",
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
+                    text = "First to know",
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 32.sp,
+                )
+
+                Spacer(modifier = Modifier.padding(vertical = 10.dp))
+
+                Text(
+                    text = "All news in one place, be\n the first to know last news",
+                    fontSize = 18.sp,
+                    color = Color(0xFF8c92ad),
+                    fontFamily = FontFamily.Monospace,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                OnBoardButton(
+                    modifier = Modifier
+                        .padding(horizontal = 40.dp)
+                        .fillMaxWidth()
+                        .wrapContentHeight(),
+                    onClick = { navBackStack.add(HomeBottomBarNav.HomeScreen) }
                 )
             }
         }
+    }
+}
+
+@Composable
+fun HorizontalPagerUi(
+    modifier: Modifier = Modifier,
+    count: List<OnBoard>,
+    pagerState: PagerState,
+    transition: Float
+) {
+    HorizontalPager(
+        modifier = modifier,
+        count = count.size,
+        itemSpacing = 5.dp,
+        state = pagerState,
+        contentPadding = PaddingValues(),
+    ) { page ->
+        val onBoard = count[page]
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(16.dp)),
+            content = {
+                Image(
+                    painter = painterResource(onBoard.img),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .scale(.8f + (.2f * transition))
+                        .graphicsLayer { rotationX = (1f - transition) * 5f }
+                        .alpha(min(1f, transition / .2f)),
+                    contentDescription = null,
+                    contentScale = ContentScale.FillBounds
+                )
+            }
+        )
     }
 }
 
@@ -180,5 +281,22 @@ fun CustomPagerIndicator(pagerState: PagerState) {
                 Spacer(modifier = Modifier.width(spacing))
             }
         }
+    }
+}
+
+@Composable
+fun OnBoardButton(modifier: Modifier = Modifier, onClick: () -> Unit = {}) {
+    Button(
+        modifier = modifier,
+        onClick = { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(Color(0xFF475ad7))
+    ) {
+        Text(
+            text = "Next",
+            color = Color.White,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
